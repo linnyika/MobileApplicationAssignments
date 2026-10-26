@@ -1,115 +1,125 @@
 package com.mobile.tenantmanagementsys
 
 import android.content.Intent
-import android.net.Uri
 import android.os.Bundle
-import android.widget.Toast
-import androidx.appcompat.app.AppCompatActivity
-import com.mobile.tenantmanagementsys.databinding.ActivityMainBinding
 import android.util.Log
+import android.view.Menu
+import android.view.MenuItem
+import androidx.appcompat.app.AppCompatActivity
+import androidx.navigation.NavController
+import androidx.navigation.fragment.NavHostFragment
+import androidx.navigation.ui.AppBarConfiguration
+import androidx.navigation.ui.navigateUp
+import androidx.navigation.ui.onNavDestinationSelected
+import androidx.navigation.ui.setupActionBarWithNavController
+import androidx.navigation.ui.setupWithNavController
+import com.mobile.tenantmanagementsys.databinding.ActivityMainBinding
+import com.mobile.tenantmanagementsys.databinding.NavHeaderBinding
+
 class MainActivity : AppCompatActivity() {
+
     private lateinit var binding: ActivityMainBinding
-    private var lastTenant: Tenant? = null
+
+    // Controls navigation between Fragments.
+    private lateinit var navController: NavController
+
+    // Defines which screens are top-level destinations.
+    private lateinit var appBarConfiguration: AppBarConfiguration
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
         Log.d("TENANT_LIFECYCLE", "MainActivity: onCreate")
+
+        // Load the Toolbar and NavHost from activity_main.xml.
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        // Restore tenant details after Activity recreation
-        if (savedInstanceState != null) {
-            val name = savedInstanceState.getString("tenant_name")
-            val phone = savedInstanceState.getString("tenant_phone")
-            val rent = savedInstanceState.getString("tenant_rent")
+        // Use our Toolbar as the Activity's App Bar.
+        setSupportActionBar(binding.toolbar)
 
-            if (name != null && phone != null && rent != null) {
-                val tenant = Tenant(name, phone, rent)
+        // Find the NavHost that displays the Fragments.
+        val navHostFragment = supportFragmentManager
+            .findFragmentById(R.id.nav_host_fragment) as NavHostFragment
 
-                lastTenant = tenant
-                binding.tenant = tenant
-            }
-        }
+        // Get the controller that switches between destinations.
+        navController = navHostFragment.navController
 
-        binding.saveButton.setOnClickListener {
-            val name = binding.tenantNameEditText.text.toString()
-            val phone = binding.phoneEditText.text.toString()
-            val rent = binding.rentEditText.text.toString()
+        // Configure the App Bar using the navigation graph.
+        appBarConfiguration = AppBarConfiguration(
+            setOf(R.id.dashboardFragment, R.id.addTenantFragment, R.id.viewTenantsFragment),
+            binding.drawerLayout
+        )
 
-            val tenant = Tenant(name, phone, rent)
-            binding.tenant = tenant
-            lastTenant = tenant
-        }
+        // Automatically update the toolbar title and back arrow.
+        setupActionBarWithNavController(
+            navController,
+            appBarConfiguration
+        )
+        binding.navView.setupWithNavController(navController)
 
-        binding.callButton.setOnClickListener {
-            val tenant = lastTenant
+        val email = intent.getStringExtra("EMAIL")
 
-            if (tenant == null) {
-                Toast.makeText(
-                    this,
-                    "Save a tenant first",
-                    Toast.LENGTH_SHORT
-                ).show()
-                return@setOnClickListener
-            }
-
-            val intent = Intent(
-                Intent.ACTION_DIAL,
-                Uri.parse("tel:${tenant.phone}")
+        if (binding.navView.headerCount > 0) {
+            val headerBinding = NavHeaderBinding.bind(
+                binding.navView.getHeaderView(0)
             )
-            startActivity(intent)
+            headerBinding.headerEmailTextView.text = email ?: "Signed in"
         }
     }
 
-    // The screen is now visible
+    // Make the App Bar's back arrow work.
+    override fun onSupportNavigateUp(): Boolean {
+        return navController.navigateUp(appBarConfiguration) ||
+                super.onSupportNavigateUp()
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu): Boolean {
+        menuInflater.inflate(R.menu.main_menu, menu)
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        if (item.itemId == R.id.action_logout) {
+            val intent = Intent(this, LoginActivity::class.java)
+            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            startActivity(intent)
+            return true
+        }
+
+        return item.onNavDestinationSelected(navController) ||
+                super.onOptionsItemSelected(item)
+    }
+
+    // Activity lifecycle logs from Lab 6.
+
     override fun onStart() {
         super.onStart()
         Log.d("TENANT_LIFECYCLE", "MainActivity: onStart")
     }
 
-    // The screen is in the foreground and the user can interact with it
     override fun onResume() {
         super.onResume()
         Log.d("TENANT_LIFECYCLE", "MainActivity: onResume")
     }
 
-    // The screen is leaving the foreground
     override fun onPause() {
         super.onPause()
         Log.d("TENANT_LIFECYCLE", "MainActivity: onPause")
     }
 
-    // The screen is no longer visible
     override fun onStop() {
         super.onStop()
         Log.d("TENANT_LIFECYCLE", "MainActivity: onStop")
     }
 
-    // The user returns to an Activity that was stopped
     override fun onRestart() {
         super.onRestart()
         Log.d("TENANT_LIFECYCLE", "MainActivity: onRestart")
     }
 
-    // The Activity is being destroyed
     override fun onDestroy() {
         super.onDestroy()
         Log.d("TENANT_LIFECYCLE", "MainActivity: onDestroy")
     }
-
-    // Save tenant details before Android recreates the Activity
-    override fun onSaveInstanceState(outState: Bundle) {
-        super.onSaveInstanceState(outState)
-
-        Log.d("TENANT_LIFECYCLE", "MainActivity: onSaveInstanceState")
-
-        val tenant = lastTenant
-
-        if (tenant != null) {
-            outState.putString("tenant_name", tenant.name)
-            outState.putString("tenant_phone", tenant.phone)
-            outState.putString("tenant_rent", tenant.rent)
-        }
-    }
-
 }

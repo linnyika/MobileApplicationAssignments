@@ -1,5 +1,4 @@
 package com.mobile.tenantmanagementsys
-
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Toast
@@ -34,6 +33,7 @@ class LoginActivity : AppCompatActivity() {
             }
 
             val intent = Intent(this, MainActivity::class.java)
+            intent.putExtra("EMAIL", email)
             startActivity(intent)
             finish()
         }

@@ -7,7 +7,8 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import com.mobile.tenantmanagementsys.databinding.FragmentAddTenantBinding
-
+import android.widget.Toast
+import androidx.navigation.fragment.findNavController
 class AddTenantFragment : Fragment() {
 
     private var _binding: FragmentAddTenantBinding? = null
@@ -27,7 +28,40 @@ class AddTenantFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // The SAVE button will be connected in Practical 3.
+
+        binding.saveButton.setOnClickListener {
+
+            // Read the details entered by the user.
+            val name = binding.tenantNameEditText.text.toString().trim()
+            val phone = binding.phoneEditText.text.toString().trim()
+            val rent = binding.rentEditText.text.toString().trim()
+
+            // Make sure all fields have been filled.
+            if (name.isEmpty() || phone.isEmpty() || rent.isEmpty()) {
+                Toast.makeText(
+                    requireContext(),
+                    "Please fill in all fields",
+                    Toast.LENGTH_SHORT
+                ).show()
+
+                return@setOnClickListener
+            }
+
+            // Create the tenant object.
+            val tenant = Tenant(name, phone, rent)
+
+            // Store the tenant in the shared repository.
+            TenantRepository.addTenant(tenant)
+
+            // Generate the Safe Args action and pass the tenant.
+            val action =
+                AddTenantFragmentDirections
+                    .actionAddTenantFragmentToViewTenantsFragment(tenant)
+
+            // Navigate to View Tenants.
+            findNavController().navigate(action)
+        }
+
     }
 
     override fun onDestroyView() {
